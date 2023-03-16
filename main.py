@@ -7,11 +7,14 @@ import tkinter as tk
 import json
 import requests
 default_conf_path = "default_conf.py"
+default_vpn_path = "./"
 
 domain = "https://my.cyberghostvpn.com/"
 api = "api/devices/"
 url_countries = domain + api + "get-server-countries"
 url_server_groups = domain + api + "get-server-groups"
+url_vpn = domain + api + "add-other"
+url_download = domain + "devices/download-config/"
 # let the user choose the country in a GUI
 
 
@@ -22,7 +25,7 @@ locales = {"en_US": "English", "de_DE": "Deutsch", "fr_FR": "Français", "es_ES"
            "it_IT": "Italiano", "pt_PT": "Português", "ru_RU": "Русский", "pl_PL": "Polski", "nl_NL": "Nederlands"}
 
 (server_groups, country_code) = ("", "")
-
+(configsId, groupsId) = ("" , "")
 try:
     import default_conf
     # cookie have to contain the SESSIONUSER
@@ -78,28 +81,71 @@ def get_server_groups(protocol, countryCode, locale, cookie):
     response_unicode = response.text.encode('latin1').decode('unicode_escape')
     return json.dumps(json.loads(response_unicode), sort_keys=True, ensure_ascii=False)
 
+"""
+# add-other :
+protocol: openvpn
+country: AD
+server_group: 87-1
+device_name: test
+locale: fr_FR
+"""
+
+def get_vpn(protocol, countryCode, server_group, device_name, locale, cookie):
+    form = {"protocol": protocol, "country": countryCode, "server_group": server_group, "device_name": device_name, "locale": locale}
+    headers = {
+        "Cookie": cookie,
+        "referer": "https://my.cyberghostvpn.com/fr_FR/download-hub/other/add-other?",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+    response = requests.post(url_vpn, headers=headers, data=form)
+    print(response.status_code)
+    response_unicode = response.text.encode('latin1').decode('unicode_escape')
+    return json.dumps(json.loads(response_unicode), sort_keys=True, ensure_ascii=False)
+
+"""  get request :
+https://my.cyberghostvpn.com/devices/download-config/232044442
+returns a zip file
+"""
+
+def download_zip(name, id):
+    headers = {
+        "Cookie": cookie,
+        "referer": "https://my.cyberghostvpn.com/fr_FR/download-hub/other/add-other?",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+    response = requests.get(url_download + str(id), headers=headers)
+    print(response.status_code)
+    # print(response.text)
+    # convert characters like \u00c9 to É
+    # download zip
+    zip_path = default_vpn_path + name + ".zip"
+    with open(zip_path, 'wb') as f:
+        f.write(response.content)
+    return zip_path
 
 # create instance
 win = tk.Tk()
-win.title("VPN slector")
+win.title("VPN selector")
 # let the user select the language and protocol
 # create a container to hold labels
-labelsFrame = ttk.LabelFrame(win, text='Cookie, locale, protocol')
-labelsFrame.grid(column=0, row=0, padx=40, pady=40)
+Frame1 = ttk.LabelFrame(win, text='Cookie and Locale')
+Frame1.grid(column=0, row=0, padx=10, pady=10)
 
 # create an entry box to enter the cookie
-ttk.Label(labelsFrame, text="Cookie:").grid(column=0, row=0, sticky='W')
+ttk.Label(Frame1, text="Cookie:").grid(column=0, row=0, sticky='W')
 cookie_text = tk.StringVar()
-cookieEntered = ttk.Entry(labelsFrame, width=18, textvariable=cookie_text)
-cookieEntered.grid(column=1, row=0)
+cookieEntered = ttk.Entry(Frame1, width=21, textvariable=cookie_text)
+cookieEntered.grid(column=1, row=0, sticky='W')
 # default_conf.cookie as current value
 cookieEntered.insert(0, cookie)
 
 
 # create a combobox to choose the locale
-ttk.Label(labelsFrame, text="Locale:").grid(column=0, row=2, sticky='W')
+ttk.Label(Frame1, text="Locale:").grid(column=0, row=2, sticky='W')
 locale_text = tk.StringVar()
-localeChosen = ttk.Combobox(labelsFrame, width=18,
+localeChosen = ttk.Combobox(Frame1, width=18,
                             textvariable=locale_text, state='readonly')
 localeChosen['values'] = list(locales.values())
 localeChosen.grid(column=1, row=2)
@@ -132,12 +178,12 @@ def try_entries():
 
 
 # add a button
-try_button = ttk.Button(labelsFrame, text="Update", command=try_entries)
+try_button = ttk.Button(Frame1, text="Update", command=try_entries)
 try_button.grid(column=0, row=3)
 
 try_status = tk.StringVar()
 try_status.set("Not tried")
-ttk.Label(labelsFrame, textvariable=try_status).grid(
+ttk.Label(Frame1, textvariable=try_status).grid(
     column=1, row=3, sticky='E')
 
 
@@ -165,7 +211,7 @@ def save_entries():
     save_button.state(['disabled'])
 
 
-save_button = ttk.Button(labelsFrame, text="Save", command=save_entries)
+save_button = ttk.Button(Frame1, text="Save", command=save_entries)
 save_button.grid(column=0, row=4)
 save_button.state(['disabled'])
 
@@ -177,19 +223,19 @@ try:
     save_status.set("Already saved✔️")
 except Exception as e:
     save_status.set("Not saved❌")
-ttk.Label(labelsFrame, textvariable=save_status).grid(
+ttk.Label(Frame1, textvariable=save_status).grid(
     column=1, row=4, sticky='E')
 
 
 # new frame for the countries, and more
-labelsFrame2 = ttk.LabelFrame(win, text='Countries')
-labelsFrame2.grid(column=1, row=0, padx=40, pady=40)
+FrameServer = ttk.LabelFrame(win, text='Server')
+FrameServer.grid(column=1, row=0, padx=10, pady=10)
 
 # create a combobox to choose the protocol
-ttk.Label(labelsFrame2, text="Protocol:").grid(column=0, row=0, sticky='W')
+ttk.Label(FrameServer, text="Protocol:").grid(column=0, row=0, sticky='W')
 protocol_text = tk.StringVar()
 protocolChosen = ttk.Combobox(
-    labelsFrame2, width=18, textvariable=protocol_text, state='readonly')
+    FrameServer, width=18, textvariable=protocol_text, state='readonly')
 protocolChosen['values'] = list(protocols.values())
 protocolChosen.grid(column=1, row=0)
 # default_conf.protocol as current value
@@ -203,10 +249,10 @@ def protocolChosen_changed():
     try_entries()
 
 # create a combobox to choose the country
-ttk.Label(labelsFrame2, text="Country:").grid(column=0, row=1, sticky='W')
+ttk.Label(FrameServer, text="Country:").grid(column=0, row=1, sticky='W')
 country_text = tk.StringVar()
 countryChosen = ttk.Combobox(
-    labelsFrame2, width=18, textvariable=country_text, state='readonly')
+    FrameServer, width=18, textvariable=country_text, state='readonly')
 # countries is a json as :
 # [{"countrycode": "AD", "name": "Andorre"}, {"countrycode": "AE", "name": "Émirats arabes unis"}, {"countrycode": "AL", "name": "Albanie"}, {"countrycode": "AM", "name": "Arménie"},
 
@@ -245,19 +291,21 @@ def on_country_change():
     
 
 def set_config_domain(i):
+    global configsId, groupsId
     configsId = json.loads(server_groups)[i]["configsId"],
     groupsId = json.loads(server_groups)[i]["groupsId"],
     config_domain_text.set(
         # configsId-groupsId-countrycode.cg-dialup.net
-        configsId[0]+"-"+groupsId[0]+"-"+country_code.lower()+".cg-dialup.net")      
+        configsId[0]+"-"+groupsId[0]+"-"+country_code.lower()+".cg-dialup.net")    
+    Button_download.state(['!disabled'])  
     
 countryChosen.bind("<<ComboboxSelected>>", lambda e: on_country_change())
 
 # create a combobox to choose the server group
-ttk.Label(labelsFrame2, text="Server group:").grid(column=0, row=2, sticky='W')
+ttk.Label(FrameServer, text="Server group:").grid(column=0, row=2, sticky='W')
 server_group_text = tk.StringVar()
 server_groupChosen = ttk.Combobox(
-    labelsFrame2, width=52, textvariable=server_group_text, state='readonly')
+    FrameServer, width=52, textvariable=server_group_text, state='readonly')
 server_groupChosen.grid(column=1, row=2)
 server_groupChosen.state(['disabled'])
 server_groupChosen.bind("<<ComboboxSelected>>", lambda e: set_config_domain(server_groupChosen.current()))
@@ -267,13 +315,95 @@ server_groupChosen.bind("<<ComboboxSelected>>", lambda e: set_config_domain(serv
 # configsId-groupsId-countrycode.cg-dialup.net
 # ex : 97-1-ad.cg-dialup.net
 
-ttk.Label(labelsFrame2, text="Config domain:").grid(column=0, row=3, sticky='W')
+ttk.Label(FrameServer, text="Config domain:").grid(column=0, row=3, sticky='W')
 config_domain_text = tk.StringVar()
 config_domain_text.set("**-*-*.cg-dialup.net")
 # this text is selectable, but not editable
-config_domain = ttk.Entry(labelsFrame2, width=20, textvariable=config_domain_text,
+config_domain = ttk.Entry(FrameServer, width=20, textvariable=config_domain_text,
                             state='readonly')
 config_domain.grid(column=1, row=3)
+
+
+
+# Frame for OpenVPN File
+FrameFile = ttk.LabelFrame(win, text='OpenVPN File')
+FrameFile.grid(column=0, row=1, padx=10, pady=10)
+
+
+
+# create a text box to ask for the file name
+# default : VPN_Selector
+ttk.Label(FrameFile, text="File name:").grid(column=0, row=0, sticky='W')
+file_name_text = tk.StringVar()
+file_name_text.set("VPN_Selector")
+file_name = ttk.Entry(FrameFile, width=21, textvariable=file_name_text)
+file_name.grid(column=1, row=0)
+
+def download_file():
+    # check if the file name is valid
+    if file_name_text.get() == "":
+        mBox.showerror('Error', 'Please enter a file name.')
+        return
+    
+    #request the file
+    try:
+        device_name = file_name_text.get()
+        vpn_data = get_vpn(list(protocols.keys())[
+                            # protocol, country_code
+                            list(protocols.values()).index(protocolChosen.get())], country_code,
+                            # server_group
+                            configsId[0]+"-"+groupsId[0],
+                            # device name
+                            device_name,
+                            # locale
+                            list(locales.keys())[list(locales.values()).index(localeChosen.get())],
+                            # cookie
+                            cookieEntered.get())
+        """
+        {   "configuration": {"country": "AE", "protocol": "openvpn_tcp", "serverGroup": "97-1"},
+            "createdAt": "2023-03-16 22:21:22",
+            "id": 232044806,
+            "name": "VPN_Selector",
+            "oauthConsumers": 
+            {
+                "accesslevel": 1,
+                "active": 1,
+                "appName": "Linux, Router etc.",
+                "deviceType": "other",
+                "domains": null,
+                "id": 10, 
+                "isInternal": 0,
+                "partners_id": 1
+                },
+            "token": "e7tPcDwkEe",
+            "tokenSecret": "Y5ARvmSgWz"}
+        """
+        vpn_data = json.loads(vpn_data)
+        user = vpn_data["token"]
+        password = vpn_data["tokenSecret"]
+        id = vpn_data["id"]
+        print("user: "+user, "password: "+password, "id: "+str(id))
+    except Exception as e:
+        # error
+        mBox.showerror(
+            'Error', 'Please run connection test.\n Maybe name already used, or too many devices ? \n' + str(e))
+        return
+    zip_path = download_zip(device_name, id)
+
+    # extract zip
+    import zipfile
+    with zipfile.ZipFile(default_vpn_path + device_name + ".zip", 'r') as zip_ref:
+        zip_ref.extractall(default_vpn_path + device_name)
+        
+
+    
+
+#add a button to download the file
+Button_download = ttk.Button(FrameFile, text="Download", command=download_file)
+Button_download.grid(column=2, row=0, sticky='W')
+# disable the button
+Button_download.state(['disabled'])
+
 
 
 
