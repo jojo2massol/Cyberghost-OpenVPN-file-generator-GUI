@@ -32,6 +32,7 @@ except:
     cookie = ""
     protocol = "openvpn"
     locale = "en_US"
+    countries = "[]"
 
 
 def get_countries(protocol, locale, cookie):
@@ -232,14 +233,19 @@ def on_country_change():
     server_groupChosen.state(['!disabled'])
     if len(server_groupChosen['values']) == 1:
         server_groupChosen.current(0)
-
+        configsId = json.loads(server_groups)[0]["configsId"],
+        groupsId = json.loads(server_groups)[0]["groupsId"],
+        config_domain_text.set(
+            # configsId-groupsId-countrycode.cg-dialup.net
+            configsId[0]+"-"+groupsId[0]+"-"+country_code.lower()+".cg-dialup.net")
+        
 countryChosen.bind("<<ComboboxSelected>>", lambda e: on_country_change())
 
 # create a combobox to choose the server group
 ttk.Label(labelsFrame2, text="Server group:").grid(column=0, row=1, sticky='W')
 server_group_text = tk.StringVar()
 server_groupChosen = ttk.Combobox(
-    labelsFrame2, width=50, textvariable=server_group_text, state='readonly')
+    labelsFrame2, width=52, textvariable=server_group_text, state='readonly')
 server_groupChosen.grid(column=1, row=1)
 
 # config domain
@@ -251,8 +257,9 @@ ttk.Label(labelsFrame2, text="Config domain:").grid(column=0, row=2, sticky='W')
 config_domain_text = tk.StringVar()
 config_domain_text.set("**-*-*.cg-dialup.net")
 # this text is selectable, but not editable
-ttk.Label(labelsFrame2, textvariable=config_domain_text).grid(
-    column=1, row=2, sticky='W')
+config_domain = ttk.Entry(labelsFrame2, width=20, textvariable=config_domain_text,
+                            state='readonly')
+config_domain.grid(column=1, row=2)
 
 
 
