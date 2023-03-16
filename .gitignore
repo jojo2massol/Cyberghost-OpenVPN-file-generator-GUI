@@ -1,0 +1,6 @@
+default_conf.py
+default_conf.py.bak
+default_conf.py.old
+test.ipynb
+test2.ipynb
+*.pyc
