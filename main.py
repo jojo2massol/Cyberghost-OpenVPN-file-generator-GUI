@@ -13,8 +13,6 @@ import platform
 import shutil
 import zipfile
 
-
-
 import vpn_file_concatenator
 
 default_conf_path = "default_conf.py"
@@ -69,14 +67,12 @@ def get_countries(protocol, locale, cookie):
     response_unicode = response.text.encode('latin1').decode('unicode_escape')
     return json.dumps(json.loads(response_unicode), sort_keys=True, ensure_ascii=False)
 
-
 """
 takes : 
 protocol: openvpn
 countryCode: CA
 locale: fr_FR
 """
-
 
 def get_server_groups(protocol, countryCode, locale, cookie):
     form = {"protocol": protocol, "countryCode": countryCode, "locale": locale}
@@ -139,6 +135,9 @@ def download_zip(name, id):
 
 # create instance
 win = tk.Tk()
+# add logo
+win.iconbitmap('cyberopenvpn.ico')
+
 try:
     import sv_ttk
     import darkdetect
@@ -176,9 +175,6 @@ localeChosen['values'] = list(locales.values())
 localeChosen.grid(column=1, row=2)
 localeChosen.set(locales[locale])
 
-# add "try" button
-
-
 def try_entries():
     try_status.set("Updating...")
     # get countries
@@ -203,7 +199,6 @@ def try_entries():
     countryChosen.state(['!disabled'])
     try_status.set("Success ✔️")
 
-
 # add a button
 try_button = ttk.Button(Frame1, text="Update", command=try_entries)
 try_button.grid(column=0, row=3)
@@ -212,7 +207,6 @@ try_status = tk.StringVar()
 try_status.set("Not tried")
 ttk.Label(Frame1, textvariable=try_status).grid(
     column=1, row=3, sticky='E')
-
 
 # add a save button
 def save_entries():
@@ -234,7 +228,6 @@ def save_entries():
     # disable the button
     save_button.state(['disabled'])
 
-
 save_button = ttk.Button(Frame1, text="Save", command=save_entries)
 save_button.grid(column=0, row=4)
 save_button.state(['disabled'])
@@ -250,7 +243,6 @@ except Exception as e:
     print(e)
 ttk.Label(Frame1, textvariable=save_status).grid(
     column=1, row=4, sticky='E')
-
 
 # new frame for the countries, and more
 FrameServer = ttk.LabelFrame(win, text='Server')
@@ -274,7 +266,6 @@ def protocolChosen_changed():
     try_entries()
     check_config()
     
-
 # create a combobox to choose the country
 ttk.Label(FrameServer, text="Country:").grid(column=0, row=1, sticky='W')
 country_text = tk.StringVar()
@@ -287,7 +278,6 @@ countryChosen['values'] = [country["name"]
                            for country in json.loads(countries)]
 countryChosen.grid(column=1, row=1)
 # countryChosen.current(0)
-
 
 def on_country_change():
     # get the country code
@@ -318,7 +308,6 @@ def on_country_change():
         server_groupChosen.set("")
     check_config()
     
-
 def set_config_domain(i):
     global configsId, groupsId, configname
     configsId = json.loads(server_groups)[i]["configsId"],
@@ -352,13 +341,9 @@ config_domain = ttk.Entry(FrameServer, width=20, textvariable=config_domain_text
                             state='readonly')
 config_domain.grid(column=1, row=3)
 
-
-
 # Frame for OpenVPN File
 FrameFile = ttk.LabelFrame(win, text='OpenVPN File')
 FrameFile.grid(column=0, row=1, padx=10, pady=10, sticky='WNSE')
-
-
 
 # create a text box to ask for the file name
 # default : VPN_Selector
@@ -487,7 +472,6 @@ def check_config():
     dest_server_text.set(dest_server)
     dest_protocol_text.set(dest_protocol)
 
-
     # check if the file exists
     if not os.path.isfile(filepath_text.get()):
         Button_create.state(['disabled'])
@@ -499,7 +483,6 @@ def check_config():
     else:
         Button_create.state(['!disabled'])
     
-
 def open_file():
     # open file dialog
     filename = filedialog.askopenfilename(
@@ -510,7 +493,6 @@ def open_file():
     filepath_text.set(filename)
     #enable the button if the file exists
     check_config()
-
 
 # button to open VPN file
 ttk.Label(FrameFile, text="OpenVPN file editor:").grid(column=0, row=1, sticky='W')
@@ -560,10 +542,6 @@ def create_file():
             os.startfile(dest_path)
         else:                                   # linux variants
             subprocess.call(('xdg-open', dest_path))
-
-
-
-
 
 # button to create a new file, by editing the current one (if it exists)
 Button_create = ttk.Button(FrameModif, text="Create new file with current configuration", command=create_file)
