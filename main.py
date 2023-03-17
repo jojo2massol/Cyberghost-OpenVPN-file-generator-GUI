@@ -3,12 +3,14 @@ from tkinter import Spinbox
 from tkinter import Menu
 from tkinter import scrolledtext
 from tkinter import ttk
+from tkinter import filedialog
 import tkinter as tk
 import json
 import requests
 import os
 import shutil
 import zipfile
+
 
 import vpn_file_concatenator
 
@@ -31,7 +33,9 @@ locales = {"en_US": "English", "de_DE": "Deutsch", "fr_FR": "Français", "es_ES"
            "it_IT": "Italiano", "pt_PT": "Português", "ru_RU": "Русский", "pl_PL": "Polski", "nl_NL": "Nederlands"}
 
 (server_groups, country_code) = ("", "")
-(configsId, groupsId, configsName) = ("", "", "")
+(configsId, groupsId, configname) = ("", "", "")
+(source_server, dest_server) = ("", "")
+(source_protocol, dest_protocol) = ("", "")
 try:
     import default_conf
     # cookie have to contain the SESSIONUSER
@@ -293,6 +297,7 @@ def on_country_change():
     else:
         # clear the group combobox
         server_groupChosen.set("")
+    check_config()
     
 
 def set_config_domain(i):
@@ -302,6 +307,7 @@ def set_config_domain(i):
     configname = configsId[0]+"-"+groupsId[0]+"-"+country_code.lower()
     config_domain_text.set(configname +".cg-dialup.net")    
     Button_download.state(['!disabled'])  
+    check_config()
     
 countryChosen.bind("<<ComboboxSelected>>", lambda e: on_country_change())
 
@@ -337,7 +343,7 @@ FrameFile.grid(column=0, row=1, padx=10, pady=10)
 
 # create a text box to ask for the file name
 # default : VPN_Selector
-ttk.Label(FrameFile, text="File name:").grid(column=0, row=0, sticky='W')
+ttk.Label(FrameFile, text="Device name:").grid(column=0, row=0, sticky='W')
 file_name_text = tk.StringVar()
 file_name_text.set("VPN_Selector")
 file_name = ttk.Entry(FrameFile, width=21, textvariable=file_name_text)
@@ -412,6 +418,9 @@ def download_file():
         #delete the zip file and extracted folder
         os.remove(zip_path + ".zip")
         shutil.rmtree(zip_path)
+
+        # fill the text box with the file path
+        filepath_text.set(default_vpn_path + "VPN_concatenated/" + configname + "_base.ovpn")
         
     #print error and its traceback
     except Exception as e:
@@ -420,6 +429,7 @@ def download_file():
             'Error', 'Concatenation failed. \n' + str(e))
         #print error and its  traceback
         return
+    check_config()
         
 
     
@@ -430,9 +440,90 @@ Button_download.grid(column=2, row=0, sticky='W')
 # disable the button
 Button_download.state(['disabled'])
 
+def check_config():
+    global source_server, source_protocol, dest_server, dest_protocol
+    # update texts of server_text and protocol_text
+    if os.path.isfile(filepath_text.get()):
+        #source_server and source_protocol
+        with open(filepath_text.get(), 'r') as f:
+            for line in f:
+                if line.startswith('remote '):
+                    source_server = line.split(' ')[1].split('.')[0]
+                if line.startswith('proto '):
+                    source_protocol = line.split(' ')[1][:-1]
+    if server_groupChosen.current() != -1:
+        #if tcp is contained in the protocol, then the protocol is tcp, else it is udp
+        if 'tcp' in protocolChosen.get().lower():
+            dest_protocol = 'tcp'
+        elif 'ipsec' in protocolChosen.get().lower():
+            dest_protocol = ''
+        else:
+            dest_protocol = 'udp'
+        #get the server name
+        dest_server = configname
+    #update the text
+    server_text.set(source_server + " -> " + dest_server)
+    protocol_text.set(source_protocol + " -> " + dest_protocol)
 
 
+    # check if the file exists
+    if not os.path.isfile(filepath_text.get()):
+        Button_create.state(['disabled'])
+        pass
+    #check if the server group is selected
+    elif server_groupChosen.current() == -1:
+        Button_create.state(['disabled'])
+        pass
+    else:
+        Button_create.state(['!disabled'])
+    
 
+def open_file():
+    # open file dialog
+    filename = filedialog.askopenfilename(
+        initialdir=default_vpn_path,
+        title="Select a File",
+        filetypes=(("OpenVPN files", "*.ovpn"), ("all files", "*.*")))
+    # update the text box
+    filepath_text.set(filename)
+    #enable the button if the file exists
+    check_config()
+
+
+# button to open VPN file
+ttk.Label(FrameFile, text="OpenVPN file editor:").grid(column=0, row=1, sticky='W')
+filepath_text = tk.StringVar()
+filepath_text.set(default_vpn_path)
+filepath = ttk.Entry(FrameFile, width=21, textvariable=filepath_text,)
+filepath.grid(column=1, row=1)
+# add event to check if the file exists
+filepath.bind("<KeyRelease>", lambda e: check_config())
+
+ttk.Button(FrameFile, text="Open", command=open_file).grid(column=2, row=1, sticky='W')
+
+# button to create a new file, by editing the current one (if it exists)
+def create_file():
+    #todo
+    pass
+
+# button to create a new file, by editing the current one (if it exists)
+Button_create = ttk.Button(FrameFile, text="Create new file with current configuration", command=create_file)
+Button_create.grid(column=0, row=4, columnspan=3)
+# disable the button
+Button_create.state(['disabled'])
+
+# text to display the differences between the current file and the new one
+ttk.Label(FrameFile, text="server:").grid(column=0, row=2, sticky='W')
+server_text = tk.StringVar()
+server_text.set("")
+server = ttk.Label(FrameFile, width=40, textvariable=server_text,)
+server.grid(column=1, row=2, columnspan=2)
+
+ttk.Label(FrameFile, text="protocol:").grid(column=0, row=3, sticky='W')
+protocol_text = tk.StringVar()
+protocol_text.set("")
+protocol = ttk.Label(FrameFile, width=40, textvariable=protocol_text,)
+protocol.grid(column=1, row=3, columnspan=2)
 
 
 
