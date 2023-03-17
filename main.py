@@ -4,6 +4,7 @@ from tkinter import Menu
 from tkinter import scrolledtext
 from tkinter import ttk
 from tkinter import filedialog
+from tkinter import PhotoImage
 import tkinter as tk
 import json
 import requests
@@ -135,8 +136,9 @@ def download_zip(name, id):
 
 # create instance
 win = tk.Tk()
-# add logo
-win.iconbitmap('cyberopenvpn.ico')
+# add logo cyberopenvpn64.png
+icon = PhotoImage(file="cyberopenvpn64.png")
+win.iconphoto(False, icon)
 
 try:
     import sv_ttk
