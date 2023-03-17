@@ -9,6 +9,8 @@ This python3 script is a Tkinter Graphical User Interface that sends requests to
 - **Autoload the new file in your VPN app  
   (tested with OpenVPN Connect on Windows,**
   doesn't work with linux gnome network manager, it opens the file in a text editor)
+- auto system theme
+![image](https://user-images.githubusercontent.com/54369031/225980723-f69fc7c4-e5ab-458a-8f68-13dc7f2336ba.png)
 ![image](https://user-images.githubusercontent.com/54369031/225975732-75e35abd-3715-4242-aade-19952ab3a2da.png)
 
 
