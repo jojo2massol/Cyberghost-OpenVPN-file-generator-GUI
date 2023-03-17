@@ -6,6 +6,12 @@ from tkinter import ttk
 import tkinter as tk
 import json
 import requests
+import os
+import shutil
+import zipfile
+
+import vpn_file_concatenator
+
 default_conf_path = "default_conf.py"
 default_vpn_path = "./"
 
@@ -25,7 +31,7 @@ locales = {"en_US": "English", "de_DE": "Deutsch", "fr_FR": "Français", "es_ES"
            "it_IT": "Italiano", "pt_PT": "Português", "ru_RU": "Русский", "pl_PL": "Polski", "nl_NL": "Nederlands"}
 
 (server_groups, country_code) = ("", "")
-(configsId, groupsId) = ("" , "")
+(configsId, groupsId, configsName) = ("", "", "")
 try:
     import default_conf
     # cookie have to contain the SESSIONUSER
@@ -120,8 +126,8 @@ def download_zip(name, id):
     # print(response.text)
     # convert characters like \u00c9 to É
     # download zip
-    zip_path = default_vpn_path + name + ".zip"
-    with open(zip_path, 'wb') as f:
+    zip_path = default_vpn_path + name
+    with open(zip_path+ ".zip", 'wb') as f:
         f.write(response.content)
     return zip_path
 
@@ -169,6 +175,7 @@ def try_entries():
     except Exception as e:
         save_button.state(['disabled'])
         try_status.set("Error ❌")
+        print(e.with_traceback())
         mBox.showerror(
             'Error', 'Check cookie, locale or protocol : \n' + str(e))
         return
@@ -191,10 +198,6 @@ ttk.Label(Frame1, textvariable=try_status).grid(
 def save_entries():
     save_status.set("Saving...")
     # override the default_conf.py file with the new values
-    import os
-    import shutil
-    # delay
-    import time
     # create a backup of the file
     shutil.copyfile(default_conf_path, default_conf_path+".old")
     # override the file
@@ -223,6 +226,7 @@ try:
     save_status.set("Already saved✔️")
 except Exception as e:
     save_status.set("Not saved❌")
+    print(e.with_traceback())
 ttk.Label(Frame1, textvariable=save_status).grid(
     column=1, row=4, sticky='E')
 
@@ -275,6 +279,7 @@ def on_country_change():
         #[{"NAME": "Premium Servers - OpenVPN via TCP", "configsId": "97", "groupsId": "1"}]
     except Exception as e:
         # error
+        print(e.with_traceback())
         mBox.showerror(
             'Error', 'Please run connection test.\n Maybe wrong country code? \n' + str(e))
         return
@@ -291,12 +296,11 @@ def on_country_change():
     
 
 def set_config_domain(i):
-    global configsId, groupsId
+    global configsId, groupsId, configname
     configsId = json.loads(server_groups)[i]["configsId"],
     groupsId = json.loads(server_groups)[i]["groupsId"],
-    config_domain_text.set(
-        # configsId-groupsId-countrycode.cg-dialup.net
-        configsId[0]+"-"+groupsId[0]+"-"+country_code.lower()+".cg-dialup.net")    
+    configname = configsId[0]+"-"+groupsId[0]+"-"+country_code.lower()
+    config_domain_text.set(configname +".cg-dialup.net")    
     Button_download.state(['!disabled'])  
     
 countryChosen.bind("<<ComboboxSelected>>", lambda e: on_country_change())
@@ -385,15 +389,37 @@ def download_file():
         print("user: "+user, "password: "+password, "id: "+str(id))
     except Exception as e:
         # error
+        print(e.with_traceback())
         mBox.showerror(
             'Error', 'Please run connection test.\n Maybe name already used, or too many devices ? \n' + str(e))
         return
     zip_path = download_zip(device_name, id)
 
     # extract zip
-    import zipfile
-    with zipfile.ZipFile(default_vpn_path + device_name + ".zip", 'r') as zip_ref:
-        zip_ref.extractall(default_vpn_path + device_name)
+
+    with zipfile.ZipFile(zip_path + ".zip", 'r') as zip_ref:
+        zip_ref.extractall(zip_path)
+
+    try:
+        #oncatenate(inpath, ovpn_file = "openvpn.ovpn", user = None, password = None, output = None, outpath = None):
+        vpn_file_concatenator.concatenate(
+            zip_path,
+            user = user,
+            password = password, 
+            output =configname + "_base.ovpn", 
+            outpath = default_vpn_path + "VPN_concatenated")
+        
+        #delete the zip file and extracted folder
+        os.remove(zip_path + ".zip")
+        shutil.rmtree(zip_path)
+        
+    #print error and its traceback
+    except Exception as e:
+        print(e.with_traceback())
+        mBox.showerror(
+            'Error', 'Concatenation failed. \n' + str(e))
+        #print error and its  traceback
+        return
         
 
     
