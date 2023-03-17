@@ -37,6 +37,7 @@ locales = {"en_US": "English", "de_DE": "Deutsch", "fr_FR": "Français", "es_ES"
 (configsId, groupsId, configname) = ("", "", "")
 (source_server, dest_server) = ("", "")
 (source_protocol, dest_protocol) = ("", "")
+countries = "[]"
 try:
     import default_conf
     # cookie have to contain the SESSIONUSER
@@ -169,6 +170,7 @@ def try_entries():
     try_status.set("Updating...")
     # get countries
     try:
+        global countries
         countries = get_countries(
             list(protocols.keys())[protocolChosen.current()], list(locales.keys())[localeChosen.current()], cookieEntered.get())
         """[
@@ -180,7 +182,7 @@ def try_entries():
     except Exception as e:
         save_button.state(['disabled'])
         try_status.set("Error ❌")
-        print(e.with_traceback())
+        print(e)
         mBox.showerror(
             'Error', 'Check cookie, locale or protocol : \n' + str(e))
         return
@@ -204,7 +206,8 @@ def save_entries():
     save_status.set("Saving...")
     # override the default_conf.py file with the new values
     # create a backup of the file
-    shutil.copyfile(default_conf_path, default_conf_path+".old")
+    if os.path.isfile(default_conf_path+".old"):
+        shutil.copyfile(default_conf_path, default_conf_path+".old")
     # override the file
     with open(default_conf_path, 'w') as file:
         file.write("# Path: default_conf.py\n")
@@ -231,7 +234,7 @@ try:
     save_status.set("Already saved✔️")
 except Exception as e:
     save_status.set("Not saved❌")
-    print(e.with_traceback())
+    print(e)
 ttk.Label(Frame1, textvariable=save_status).grid(
     column=1, row=4, sticky='E')
 
@@ -286,7 +289,7 @@ def on_country_change():
         #[{"NAME": "Premium Servers - OpenVPN via TCP", "configsId": "97", "groupsId": "1"}]
     except Exception as e:
         # error
-        print(e.with_traceback())
+        print(e)
         mBox.showerror(
             'Error', 'Please run connection test.\n Maybe wrong country code? \n' + str(e))
         return
@@ -398,7 +401,7 @@ def download_file():
         print("user: "+user, "password: "+password, "id: "+str(id))
     except Exception as e:
         # error
-        print(e.with_traceback())
+        print(e)
         mBox.showerror(
             'Error', 'Please run connection test.\n Maybe name already used, or too many devices ? \n' + str(e))
         return
@@ -427,7 +430,7 @@ def download_file():
         
     #print error and its traceback
     except Exception as e:
-        print(e.with_traceback())
+        print(e)
         mBox.showerror(
             'Error', 'Concatenation failed. \n' + str(e))
         #print error and its  traceback
