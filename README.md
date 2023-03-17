@@ -30,3 +30,4 @@ This python3 script is a Tkinter Graphical User Interface that sends requests to
   - refresh the page
   - click on the first entry, and search in the request headers for `cookie`. 
   - Copy the `SESSIONUSER` value in the cookie, and paste it in the entry field in the GUI
+![How to get session user](https://user-images.githubusercontent.com/54369031/225950343-3e274c03-1fd4-4dd3-b4a6-8c56f03999eb.png)
