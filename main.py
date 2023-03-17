@@ -139,11 +139,24 @@ def download_zip(name, id):
 
 # create instance
 win = tk.Tk()
+try:
+    import sv_ttk
+    import darkdetect
+    # get system theme
+
+    if (darkdetect.isDark()):
+        sv_ttk.set_theme("dark")
+    else:
+        sv_ttk.set_theme("light")
+    # set default internal margin to 5, up, down, left, right
+    ttk.Style().configure(".", padding=(5, 10, 5, 10))
+except:
+    pass
 win.title("VPN selector")
 # let the user select the language and protocol
 # create a container to hold labels
 Frame1 = ttk.LabelFrame(win, text='Cookie and Locale')
-Frame1.grid(column=0, row=0, padx=10, pady=10, sticky='WN')
+Frame1.grid(column=0, row=0, padx=10, pady=10, sticky='WNSE')
 
 # create an entry box to enter the cookie
 ttk.Label(Frame1, text="Cookie:").grid(column=0, row=0, sticky='W')
@@ -241,7 +254,7 @@ ttk.Label(Frame1, textvariable=save_status).grid(
 
 # new frame for the countries, and more
 FrameServer = ttk.LabelFrame(win, text='Server')
-FrameServer.grid(column=1, row=0, padx=10, pady=10, sticky='WN')
+FrameServer.grid(column=1, row=0, padx=10, pady=10, sticky='WNSE')
 
 # create a combobox to choose the protocol
 ttk.Label(FrameServer, text="Protocol:").grid(column=0, row=0, sticky='W')
@@ -343,7 +356,7 @@ config_domain.grid(column=1, row=3)
 
 # Frame for OpenVPN File
 FrameFile = ttk.LabelFrame(win, text='OpenVPN File')
-FrameFile.grid(column=0, row=1, padx=10, pady=10, sticky='WN')
+FrameFile.grid(column=0, row=1, padx=10, pady=10, sticky='WNSE')
 
 
 
@@ -512,7 +525,7 @@ ttk.Button(FrameFile, text="Open", command=open_file).grid(column=2, row=1, stic
 
 # frame for modifications
 FrameModif = ttk.LabelFrame(text="File modifications")
-FrameModif.grid(column=1, row=1,  padx=10, pady=10, sticky='WN')
+FrameModif.grid(column=1, row=1,  padx=10, pady=10, sticky='WNSE')
 
 # button to create a new file, by editing the current one (if it exists)
 def create_file():
