@@ -4,3 +4,4 @@ default_conf.py.old
 test.ipynb
 test2.ipynb
 *.pyc
+VPN_*
