@@ -9,7 +9,8 @@ This python3 script is a Tkinter Graphical User Interface that sends requests to
 - **Autoload the new file in your VPN app  
   (tested with OpenVPN Connect on Windows,**
   doesn't work with linux gnome network manager, it opens the file in a text editor)
-![image](https://user-images.githubusercontent.com/54369031/225952327-4c89fb84-f26c-4dce-aac6-9e2eda856b2e.png)
+![image](https://user-images.githubusercontent.com/54369031/225975732-75e35abd-3715-4242-aade-19952ab3a2da.png)
+
 
 ## Compatibility
 - Windows: Tested: Win11✔️
@@ -22,8 +23,7 @@ This python3 script is a Tkinter Graphical User Interface that sends requests to
   `git clone https://github.com/jojo2massol/Cyberghost-OpenVPN-file-generator-GUI.git`
 - **Install the requirements** : 
   - Interpreter: `python3`  
-  - ```pip install tkinter json requests os subprocess platform shutil zipfile```  
-    (these are commonly already installed)
+  - ```pip install tk jsonlib requests os-sys shutils sv_ttk darkdetect```
 - **Run the script**  
   ```sh
   cd Cyberghost-OpenVPN-file-generator-GUI
