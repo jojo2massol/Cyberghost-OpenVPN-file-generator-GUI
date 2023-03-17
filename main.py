@@ -8,8 +8,11 @@ import tkinter as tk
 import json
 import requests
 import os
+import subprocess
+import platform
 import shutil
 import zipfile
+
 
 
 import vpn_file_concatenator
@@ -23,8 +26,6 @@ url_countries = domain + api + "get-server-countries"
 url_server_groups = domain + api + "get-server-groups"
 url_vpn = domain + api + "add-other"
 url_download = domain + "devices/download-config/"
-# let the user choose the country in a GUI
-
 
 protocols = {"openvpn": "Open VPN", "openvpn_tcp": "Open VPN TCP",
              "openvpn_legacy": "Open VPN <= 2.3", "openvpn_tcp_legacy": "Open VPN TCP <= 2.3", "ipsec": "IPsec (useless here)"}
@@ -141,13 +142,13 @@ win.title("VPN selector")
 # let the user select the language and protocol
 # create a container to hold labels
 Frame1 = ttk.LabelFrame(win, text='Cookie and Locale')
-Frame1.grid(column=0, row=0, padx=10, pady=10)
+Frame1.grid(column=0, row=0, padx=10, pady=10, sticky='WN')
 
 # create an entry box to enter the cookie
 ttk.Label(Frame1, text="Cookie:").grid(column=0, row=0, sticky='W')
 cookie_text = tk.StringVar()
-cookieEntered = ttk.Entry(Frame1, width=21, textvariable=cookie_text)
-cookieEntered.grid(column=1, row=0, sticky='W')
+cookieEntered = ttk.Entry(Frame1, width=40, textvariable=cookie_text)
+cookieEntered.grid(column=1, row=0, sticky='W', columnspan=2)
 # default_conf.cookie as current value
 cookieEntered.insert(0, cookie)
 
@@ -237,7 +238,7 @@ ttk.Label(Frame1, textvariable=save_status).grid(
 
 # new frame for the countries, and more
 FrameServer = ttk.LabelFrame(win, text='Server')
-FrameServer.grid(column=1, row=0, padx=10, pady=10)
+FrameServer.grid(column=1, row=0, padx=10, pady=10, sticky='WN')
 
 # create a combobox to choose the protocol
 ttk.Label(FrameServer, text="Protocol:").grid(column=0, row=0, sticky='W')
@@ -255,6 +256,8 @@ def protocolChosen_changed():
     server_groupChosen.state(['disabled'])
     try_status.set("")
     try_entries()
+    check_config()
+    
 
 # create a combobox to choose the country
 ttk.Label(FrameServer, text="Country:").grid(column=0, row=1, sticky='W')
@@ -337,7 +340,7 @@ config_domain.grid(column=1, row=3)
 
 # Frame for OpenVPN File
 FrameFile = ttk.LabelFrame(win, text='OpenVPN File')
-FrameFile.grid(column=0, row=1, padx=10, pady=10)
+FrameFile.grid(column=0, row=1, padx=10, pady=10, sticky='WN')
 
 
 
@@ -451,7 +454,7 @@ def check_config():
                     source_server = line.split(' ')[1].split('.')[0]
                 if line.startswith('proto '):
                     source_protocol = line.split(' ')[1][:-1]
-    if server_groupChosen.current() != -1:
+    if protocolChosen.current() != -1:
         #if tcp is contained in the protocol, then the protocol is tcp, else it is udp
         if 'tcp' in protocolChosen.get().lower():
             dest_protocol = 'tcp'
@@ -460,10 +463,13 @@ def check_config():
         else:
             dest_protocol = 'udp'
         #get the server name
+    if server_groupChosen.current() != -1:
         dest_server = configname
     #update the text
-    server_text.set(source_server + " -> " + dest_server)
-    protocol_text.set(source_protocol + " -> " + dest_protocol)
+    source_server_text.set(source_server)
+    source_protocol_text.set(source_protocol)
+    dest_server_text.set(dest_server)
+    dest_protocol_text.set(dest_protocol)
 
 
     # check if the file exists
@@ -501,31 +507,82 @@ filepath.bind("<KeyRelease>", lambda e: check_config())
 
 ttk.Button(FrameFile, text="Open", command=open_file).grid(column=2, row=1, sticky='W')
 
-# button to create a new file, by editing the current one (if it exists)
-def create_file():
-    #todo
-    pass
+# frame for modifications
+FrameModif = ttk.LabelFrame(text="File modifications")
+FrameModif.grid(column=1, row=1,  padx=10, pady=10, sticky='WN')
 
 # button to create a new file, by editing the current one (if it exists)
-Button_create = ttk.Button(FrameFile, text="Create new file with current configuration", command=create_file)
-Button_create.grid(column=0, row=4, columnspan=3)
+def create_file():
+    # check if the file exists
+    if not os.path.isfile(filepath_text.get()):
+        mBox.showerror(
+            'Error', 'Please open a file.')
+        return
+    # check if the server group is selected
+    if server_groupChosen.current() == -1:
+        mBox.showerror(
+            'Error', 'Please select a server group.')
+        return
+    # read the current file
+    with open(filepath_text.get(), 'r') as f:
+        dest_path = filepath_text.get()[:-len(filepath_text.get().split('/')[-1])] + dest_server_text.get() + "_new.ovpn"
+        with open(dest_path, 'w') as new_f:
+            for line in f:
+                # change the server name
+                if line.startswith('remote '):
+                    new_f.write('remote ' + config_domain_text.get() + ' ' + line.split(' ')[-1])
+                # change the protocol
+                elif line.startswith('proto '):
+                    new_f.write('proto ' + dest_protocol + '\n')
+                else:
+                    new_f.write(line)
+    if CheckbuttonOpenFile.state() == ('selected',):
+        #open the new file with a system app
+        if platform.system() == 'Darwin':       # macOS
+            subprocess.call(('open', dest_path))
+        elif platform.system() == 'Windows':    # Windows
+            os.startfile(dest_path)
+        else:                                   # linux variants
+            subprocess.call(('xdg-open', dest_path))
+
+
+
+
+
+# button to create a new file, by editing the current one (if it exists)
+Button_create = ttk.Button(FrameModif, text="Create new file with current configuration", command=create_file)
+Button_create.grid(column=0, row=4, columnspan=4)
 # disable the button
 Button_create.state(['disabled'])
 
 # text to display the differences between the current file and the new one
-ttk.Label(FrameFile, text="server:").grid(column=0, row=2, sticky='W')
-server_text = tk.StringVar()
-server_text.set("")
-server = ttk.Label(FrameFile, width=40, textvariable=server_text,)
-server.grid(column=1, row=2, columnspan=2)
+ttk.Label(FrameModif, text="server:").grid(column=0, row=2, sticky='W')
+source_server_text = tk.StringVar()
+source_server_text.set("")
+dest_server_text = tk.StringVar()
+dest_server_text.set("")
+Label_source_server = ttk.Label(FrameModif, width=20, textvariable=source_server_text)
+Label_dest_server = ttk.Label(FrameModif, width=20, textvariable=dest_server_text)
+Label_source_server.grid(column=1, row=2, columnspan=2, sticky='W')
+Label_dest_server.grid(column=3, row=2, columnspan=2, sticky='W')
+ttk.Label(FrameModif, text="→", width=2).grid(column=2, row=2)
 
-ttk.Label(FrameFile, text="protocol:").grid(column=0, row=3, sticky='W')
-protocol_text = tk.StringVar()
-protocol_text.set("")
-protocol = ttk.Label(FrameFile, width=40, textvariable=protocol_text,)
-protocol.grid(column=1, row=3, columnspan=2)
+ttk.Label(FrameModif, text="protocol:").grid(column=0, row=3, sticky='W')
+source_protocol_text = tk.StringVar()
+source_protocol_text.set("")
+dest_protocol_text = tk.StringVar()
+dest_protocol_text.set("")
+Label_source_protocol = ttk.Label(FrameModif, width=4, textvariable=source_protocol_text)
+Label_dest_protocol = ttk.Label(FrameModif, width=4, textvariable=dest_protocol_text)
+Label_source_protocol.grid(column=1, row=3, columnspan=2, sticky='W')
+Label_dest_protocol.grid(column=3, row=3, columnspan=2, sticky='W')
+ttk.Label(FrameModif, text="→", width=2).grid(column=2, row=3)
 
-
+#checkbox for automatic opening of the new file
+open_file_var = tk.IntVar()
+open_file_var.set(1)
+CheckbuttonOpenFile = ttk.Checkbutton(FrameModif, text="Open the new file automatically", variable=open_file_var)
+CheckbuttonOpenFile.grid(column=0, row=5, columnspan=4)
 
 # display the window
 win.mainloop()
