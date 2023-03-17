@@ -151,6 +151,7 @@ try:
     # set default internal margin to 5, up, down, left, right
     ttk.Style().configure(".", padding=(5, 10, 5, 10))
 except:
+    print("no theme installed, using default")
     pass
 win.title("VPN selector")
 # let the user select the language and protocol
