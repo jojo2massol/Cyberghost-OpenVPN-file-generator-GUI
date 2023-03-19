@@ -361,7 +361,7 @@ config_domain = ttk.Entry(FrameServer, width=20, textvariable=config_domain_text
 config_domain.grid(column=1, row=3)
 
 # Frame for OpenVPN File
-FrameFile = ttk.LabelFrame(win, text='OpenVPN File')
+FrameFile = ttk.LabelFrame(win, text='OpenVPN File editor:')
 FrameFile.grid(column=0, row=1, padx=10, pady=10, sticky='WNSE')
 
 # create a text box to ask for the file name
@@ -514,9 +514,9 @@ def open_file():
     check_config()
 
 # button to open VPN file
-ttk.Label(FrameFile, text="OpenVPN file editor:").grid(column=0, row=1, sticky='W')
+ttk.Label(FrameFile, text="OpenVPN file:").grid(column=0, row=1, sticky='W')
 filepath_text = tk.StringVar()
-filepath_text.set(default_vpn_path)
+filepath_text.set("")
 filepath = ttk.Entry(FrameFile, width=21, textvariable=filepath_text,)
 filepath.grid(column=1, row=1)
 # add event to check if the file exists
