@@ -147,10 +147,31 @@ try:
 
     if (darkdetect.isDark()):
         sv_ttk.set_theme("dark")
+        try:
+            #windows title bar
+            if platform.system() == "Windows":
+                import ctypes as ct
+                def dark_title_bar(window):
+                    """
+                    MORE INFO:
+                    https://docs.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
+                    """
+                    #window.update()
+                    hwnd = ct.windll.user32.GetParent(window.winfo_id())
+                    rendering_policy = 20 #DWMWA_USE_IMMERSIVE_DARK_MODE
+                    value = ct.c_int(2)
+                    ct.windll.dwmapi.DwmSetWindowAttribute(hwnd, rendering_policy, ct.byref(value), ct.sizeof(value))
+            dark_title_bar(win)
+        except:
+            pass
     else:
         sv_ttk.set_theme("light")
     # set default internal margin to 5, up, down, left, right
     ttk.Style().configure(".", padding=(5, 10, 5, 10))
+    
+    
+
+
 except:
     print("no theme installed, using default")
     pass
@@ -180,6 +201,7 @@ localeChosen.set(locales[locale])
 
 def try_entries():
     try_status.set("Updating...")
+    win.update()
     # get countries
     try:
         global countries
@@ -214,6 +236,7 @@ ttk.Label(Frame1, textvariable=try_status).grid(
 # add a save button
 def save_entries():
     save_status.set("Saving...")
+    win.update()
     # override the default_conf.py file with the new values
     # create a backup of the file
     if os.path.isfile(default_conf_path+".old"):
@@ -236,14 +259,7 @@ save_button.grid(column=0, row=4)
 save_button.state(['disabled'])
 
 save_status = tk.StringVar()
-try:
-    countries = get_countries(default_conf.protocol,
-                              default_conf.locale, default_conf.cookie)
-    # print(countries)
-    save_status.set("Already saved✔️")
-except Exception as e:
-    save_status.set("Not saved❌")
-    print(e)
+save_status.set("Unknown ...")
 ttk.Label(Frame1, textvariable=save_status).grid(
     column=1, row=4, sticky='E')
 
@@ -580,6 +596,18 @@ open_file_var = tk.IntVar()
 open_file_var.set(1)
 CheckbuttonOpenFile = ttk.Checkbutton(FrameModif, text="Open the new file automatically", variable=open_file_var)
 CheckbuttonOpenFile.grid(column=0, row=5, columnspan=4)
+
+win.update()
+
+try:
+    countries = get_countries(default_conf.protocol,
+                              default_conf.locale, default_conf.cookie)
+    # print(countries)
+    save_status.set("Already saved✔️")
+    try_status.set("Updated ✔️")
+except Exception as e:
+    save_status.set("Not saved❌")
+    print(e)
 
 # display the window
 win.mainloop()
