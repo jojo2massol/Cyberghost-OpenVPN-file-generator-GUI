@@ -25,7 +25,7 @@ This python3 script is a Tkinter Graphical User Interface that sends requests to
   `git clone https://github.com/jojo2massol/Cyberghost-OpenVPN-file-generator-GUI.git`
 - **Install the requirements** : 
   - Interpreter: `python3`  
-  - ```pip install tk jsonlib requests os-sys shutils sv_ttk darkdetect```
+  - ```pip install tk requests shutils sv_ttk darkdetect```
 - **Run the script**  
   ```sh
   cd Cyberghost-OpenVPN-file-generator-GUI
